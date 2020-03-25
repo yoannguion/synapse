@@ -101,7 +101,7 @@ class TestReplicationDataHandler(ReplicationDataHandler):
         self.streams = set()
         self._received_rdata_rows = []
 
-    async def on_rdata(self, stream_name, token, rows):
-        await super().on_rdata(stream_name, token, rows)
+    async def on_rdata(self, stream_name, instance_name, token, rows):
+        await super().on_rdata(stream_name, instance_name, token, rows)
         for r in rows:
             self._received_rdata_rows.append((stream_name, token, r))
