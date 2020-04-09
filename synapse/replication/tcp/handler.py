@@ -182,6 +182,7 @@ class ReplicationCommandHandler:
         stream_name = cmd.stream_name
         inbound_rdata_count.labels(stream_name).inc()
 
+        logger.debug("got RDATA %s %s", stream_name, cmd.token)
         try:
             row = STREAMS_MAP[stream_name].parse_row(cmd.row)
         except Exception:
@@ -226,10 +227,12 @@ class ReplicationCommandHandler:
             rows: a list of Stream.ROW_TYPE objects as returned by
                 Stream.parse_row.
         """
-        logger.debug("Received rdata %s -> %s", stream_name, token)
+        logger.debug("Processing rdata %s %s", stream_name, token)
         await self._replication_data_handler.on_rdata(stream_name, token, rows)
 
     async def on_POSITION(self, cmd: PositionCommand):
+        logger.debug("got POSITION %s %s", cmd.stream_name, cmd.token)
+
         stream = self._streams.get(cmd.stream_name)
         if not stream:
             logger.error("Got POSITION for unknown stream: %s", cmd.stream_name)
@@ -262,6 +265,12 @@ class ReplicationCommandHandler:
             # between then and now.
             missing_updates = cmd.token != current_token
             while missing_updates:
+                logger.debug(
+                    "Catching up %s from %s to %s",
+                    cmd.stream_name,
+                    current_token,
+                    cmd.token,
+                )
                 (
                     updates,
                     current_token,
@@ -274,6 +283,8 @@ class ReplicationCommandHandler:
                         current_token,
                         [stream.parse_row(update[1]) for update in updates],
                     )
+
+            logger.debug("Catch up of %s complete", cmd.stream_name)
 
             # We've now caught up to position sent to us, notify handler.
             await self._replication_data_handler.on_position(cmd.stream_name, cmd.token)
