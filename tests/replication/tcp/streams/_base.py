@@ -37,8 +37,16 @@ class BaseStreamTestCase(unittest.HomeserverTestCase):
         # Make a new HomeServer object for the worker
         config = self.default_config()
         config["worker_app"] = "synapse.app.generic_worker"
+        config["worker_replication_host"] = "testserv"
+        config["worker_replication_http_port"] = "8765"
+
+        self.reactor.lookups["testserv"] = "1.2.3.4"
+
         self.worker_hs = self.setup_test_homeserver(
-            http_client=None, homeserverToUse=GenericWorkerServer, config=config,
+            http_client=None,
+            homeserverToUse=GenericWorkerServer,
+            config=config,
+            reactor=self.reactor,
         )
 
         # Since we use sqlite in memory databases we need to make sure the
