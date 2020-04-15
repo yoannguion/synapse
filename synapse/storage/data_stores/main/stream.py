@@ -310,6 +310,7 @@ class StreamWorkerStore(EventsWorkerStore, SQLBaseStore):
         room_ids = yield self._events_stream_cache.get_entities_changed(
             room_ids, from_id
         )
+        logger.info("Rooms changed since %s: %s", from_id, room_ids)
 
         if not room_ids:
             return {}
