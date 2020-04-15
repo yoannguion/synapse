@@ -1017,6 +1017,7 @@ class EventsWorkerStore(SQLBaseStore):
             txn.execute(sql, (last_id, upper_bound))
             new_event_updates.extend(txn)
 
+            # XXX does this not return more than `limit` rows?
             return new_event_updates
 
         return self.db.runInteraction(
