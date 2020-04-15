@@ -990,6 +990,12 @@ class EventsWorkerStore(SQLBaseStore):
             )
             txn.execute(sql, (last_id, current_id, limit))
             new_event_updates = txn.fetchall()
+            logger.info(
+                "query for new events %i < stream_ordering <= %i: %i rows",
+                last_id,
+                current_id,
+                len(new_event_updates),
+            )
 
             if len(new_event_updates) == limit:
                 upper_bound = new_event_updates[-1][0]
