@@ -20,7 +20,7 @@ from typing import Any, Callable, Dict, List, Optional, Set
 from prometheus_client import Counter
 
 from synapse.metrics import LaterGauge
-from synapse.replication.tcp.client import ReplicationClientFactory
+from synapse.replication.tcp.client import DirectTcpReplicationClientFactory
 from synapse.replication.tcp.commands import (
     ClearUserSyncsCommand,
     Command,
@@ -66,6 +66,7 @@ class ReplicationCommandHandler:
         self._notifier = hs.get_notifier()
         self._clock = hs.get_clock()
         self._instance_id = hs.get_instance_id()
+        self._instance_name = hs.get_instance_name()
 
         # Set of streams that we've caught up with.
         self._streams_connected = set()  # type: Set[str]
@@ -81,7 +82,7 @@ class ReplicationCommandHandler:
         self._pending_batches = {}  # type: Dict[str, List[Any]]
 
         # The factory used to create connections.
-        self._factory = None  # type: Optional[ReplicationClientFactory]
+        self._factory = None  # type: Optional[DirectTcpReplicationClientFactory]
 
         # The currently connected connections.
         self._connections = []  # type: List[AbstractConnection]
@@ -108,11 +109,22 @@ class ReplicationCommandHandler:
         """Helper method to start a replication connection to the remote server
         using TCP.
         """
-        client_name = hs.config.worker_name
-        self._factory = ReplicationClientFactory(hs, client_name, self)
-        host = hs.config.worker_replication_host
-        port = hs.config.worker_replication_port
-        hs.get_reactor().connectTCP(host, port, self._factory)
+        if hs.config.redis.redis_enabled:
+            from synapse.replication.tcp.redis import (
+                RedisDirectTcpReplicationClientFactory,
+            )
+
+            logger.info("Connecting to redis.")
+            self._factory = RedisDirectTcpReplicationClientFactory(hs)
+            hs.get_reactor().connectTCP(
+                hs.config.redis.redis_host, hs.config.redis.redis_port, self._factory,
+            )
+        else:
+            client_name = hs.config.worker_name
+            self._factory = DirectTcpReplicationClientFactory(hs, client_name, self)
+            host = hs.config.worker_replication_host
+            port = hs.config.worker_replication_port
+            hs.get_reactor().connectTCP(host, port, self._factory)
 
     async def on_REPLICATE(self, cmd: ReplicateCommand):
         # We only want to announce positions by the writer of the streams.
@@ -122,7 +134,9 @@ class ReplicationCommandHandler:
 
         for stream_name, stream in self._streams.items():
             current_token = stream.current_token()
-            self.send_command(PositionCommand(stream_name, current_token))
+            self.send_command(
+                PositionCommand(stream_name, self._instance_name, current_token)
+            )
 
     async def on_USER_SYNC(self, cmd: UserSyncCommand):
         user_sync_counter.inc()
@@ -215,9 +229,11 @@ class ReplicationCommandHandler:
                 # Check if this is the last of a batch of updates
                 rows = self._pending_batches.pop(stream_name, [])
                 rows.append(row)
-                await self.on_rdata(stream_name, cmd.token, rows)
+                await self.on_rdata(stream_name, cmd.instance_name, cmd.token, rows)
 
-    async def on_rdata(self, stream_name: str, token: int, rows: list):
+    async def on_rdata(
+        self, stream_name: str, instance_name: str, token: int, rows: list
+    ):
         """Called to handle a batch of replication data with a given stream token.
 
         Args:
@@ -227,7 +243,9 @@ class ReplicationCommandHandler:
                 Stream.parse_row.
         """
         logger.debug("Received rdata %s -> %s", stream_name, token)
-        await self._replication_data_handler.on_rdata(stream_name, token, rows)
+        await self._replication_data_handler.on_rdata(
+            stream_name, instance_name, token, rows
+        )
 
     async def on_POSITION(self, cmd: PositionCommand):
         stream = self._streams.get(cmd.stream_name)
@@ -247,15 +265,7 @@ class ReplicationCommandHandler:
             self._pending_batches.pop(cmd.stream_name, [])
 
             # Find where we previously streamed up to.
-            current_token = self._replication_data_handler.get_streams_to_replicate().get(
-                cmd.stream_name
-            )
-            if current_token is None:
-                logger.warning(
-                    "Got POSITION for stream we're not subscribed to: %s",
-                    cmd.stream_name,
-                )
-                return
+            current_token = stream.current_token()
 
             # If the position token matches our current token then we're up to
             # date and there's nothing to do. Otherwise, fetch all updates
@@ -266,11 +276,14 @@ class ReplicationCommandHandler:
                     updates,
                     current_token,
                     missing_updates,
-                ) = await stream.get_updates_since(current_token, cmd.token)
+                ) = await stream.get_updates_since(
+                    cmd.instance_name, current_token, cmd.token
+                )
 
                 if updates:
                     await self.on_rdata(
                         cmd.stream_name,
+                        cmd.instance_name,
                         current_token,
                         [stream.parse_row(update[1]) for update in updates],
                     )
@@ -403,4 +416,4 @@ class ReplicationCommandHandler:
 
         We need to check if the client is interested in the stream or not
         """
-        self.send_command(RdataCommand(stream_name, token, data))
+        self.send_command(RdataCommand(stream_name, self._instance_name, token, data))
