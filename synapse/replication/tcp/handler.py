@@ -277,11 +277,9 @@ class ReplicationCommandHandler:
                     missing_updates,
                 ) = await stream.get_updates_since(current_token, cmd.token)
 
-                if updates:
+                for token, row in updates:
                     await self.on_rdata(
-                        cmd.stream_name,
-                        current_token,
-                        [stream.parse_row(update[1]) for update in updates],
+                        cmd.stream_name, token, [stream.parse_row(row)],
                     )
 
             logger.debug("Catch up of %s complete", cmd.stream_name)
