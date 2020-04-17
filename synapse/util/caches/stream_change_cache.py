@@ -124,6 +124,7 @@ class StreamChangeCache(object):
         """Informs the cache that the entity has been changed at the given
         position.
         """
+        logger.info("Stream %s: %s changing at %s", self.name, entity, stream_pos)
         assert type(stream_pos) is int
 
         # sanity-check that we are not going to overwrite existing data.
