@@ -19,7 +19,7 @@ from typing import Tuple, Type
 
 import attr
 
-from ._base import Stream, db_query_to_update_function
+from ._base import Stream, current_token_without_instance, db_query_to_update_function
 
 
 """Handling of the 'events' replication stream
@@ -116,7 +116,7 @@ class EventsStream(Stream):
 
     def __init__(self, hs):
         self._store = hs.get_datastore()
-        self.current_token = self._store.get_current_events_token  # type: ignore
+        self.current_token = current_token_without_instance(self._store.get_current_events_token)  # type: ignore
         self.update_function = db_query_to_update_function(self._update_function)  # type: ignore
 
         super(EventsStream, self).__init__(hs)

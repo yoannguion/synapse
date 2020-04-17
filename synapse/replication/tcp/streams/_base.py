@@ -65,17 +65,16 @@ class Stream(object):
         return cls.ROW_TYPE(*row)
 
     def __init__(self, hs):
+        self.local_instance_name = hs.get_instance_name()  # type: str
 
         # The token from which we last asked for updates
-        self.last_token = self.current_token()
-
-        self.local_instance_name = hs.get_instance_name()
+        self.last_token = self.current_token(self.local_instance_name)
 
     def discard_updates_and_advance(self):
         """Called when the stream should advance but the updates would be discarded,
         e.g. when there are no currently connected workers.
         """
-        self.last_token = self.current_token()
+        self.last_token = self.current_token(self.local_instance_name)
 
     async def get_updates(self) -> Tuple[List[Tuple[Token, JsonDict]], Token, bool]:
         """Gets all updates since the last time this function was called (or
@@ -87,7 +86,7 @@ class Stream(object):
             position in stream, and `limited` is whether there are more updates
             to fetch.
         """
-        current_token = self.current_token()
+        current_token = self.current_token(self.local_instance_name)
         updates, current_token, limited = await self.get_updates_since(
             self.local_instance_name, self.last_token, current_token
         )
@@ -118,7 +117,7 @@ class Stream(object):
         )
         return updates, upto_token, limited
 
-    def current_token(self):
+    def current_token(self, instance_name: str):
         """Gets the current token of the underlying streams. Should be provided
         by the sub classes
 
@@ -127,7 +126,7 @@ class Stream(object):
         """
         raise NotImplementedError()
 
-    def update_function(self, from_token, current_token, limit):
+    def update_function(self, instance_name, from_token, current_token, limit):
         """Get updates between from_token and to_token.
 
         Returns:
@@ -136,6 +135,12 @@ class Stream(object):
                 a ``ROW_TYPE`` instance
         """
         raise NotImplementedError()
+
+
+def current_token_without_instance(
+    current_token: Callable[[], int]
+) -> Callable[[str], int]:
+    return lambda instance_name: current_token()
 
 
 def db_query_to_update_function(
@@ -204,7 +209,7 @@ class BackfillStream(Stream):
 
     def __init__(self, hs):
         store = hs.get_datastore()
-        self.current_token = store.get_current_backfill_token  # type: ignore
+        self.current_token = current_token_without_instance(store.get_current_backfill_token)  # type: ignore
         self.update_function = db_query_to_update_function(store.get_all_new_backfill_event_rows)  # type: ignore
 
         super(BackfillStream, self).__init__(hs)
@@ -233,7 +238,7 @@ class PresenceStream(Stream):
 
         self._is_worker = hs.config.worker_app is not None
 
-        self.current_token = store.get_current_presence_token  # type: ignore
+        self.current_token = current_token_without_instance(store.get_current_presence_token)  # type: ignore
 
         if hs.config.worker_app is None:
             self.update_function = db_query_to_update_function(presence_handler.get_all_presence_updates)  # type: ignore
@@ -255,7 +260,7 @@ class TypingStream(Stream):
     def __init__(self, hs):
         typing_handler = hs.get_typing_handler()
 
-        self.current_token = typing_handler.get_current_token  # type: ignore
+        self.current_token = current_token_without_instance(typing_handler.get_current_token)  # type: ignore
 
         if hs.config.worker_app is None:
             self.update_function = db_query_to_update_function(typing_handler.get_all_typing_updates)  # type: ignore
@@ -284,7 +289,7 @@ class ReceiptsStream(Stream):
     def __init__(self, hs):
         store = hs.get_datastore()
 
-        self.current_token = store.get_max_receipt_stream_id  # type: ignore
+        self.current_token = current_token_without_instance(store.get_max_receipt_stream_id)  # type: ignore
         self.update_function = db_query_to_update_function(store.get_all_updated_receipts)  # type: ignore
 
         super(ReceiptsStream, self).__init__(hs)
@@ -303,7 +308,7 @@ class PushRulesStream(Stream):
         self.store = hs.get_datastore()
         super(PushRulesStream, self).__init__(hs)
 
-    def current_token(self):
+    def current_token(self, instance_name):
         push_rules_token, _ = self.store.get_push_rules_stream_token()
         return push_rules_token
 
@@ -333,7 +338,7 @@ class PushersStream(Stream):
     def __init__(self, hs):
         store = hs.get_datastore()
 
-        self.current_token = store.get_pushers_stream_token  # type: ignore
+        self.current_token = current_token_without_instance(store.get_pushers_stream_token)  # type: ignore
         self.update_function = db_query_to_update_function(store.get_all_updated_pushers_rows)  # type: ignore
 
         super(PushersStream, self).__init__(hs)
@@ -365,7 +370,7 @@ class CachesStream(Stream):
     def __init__(self, hs):
         store = hs.get_datastore()
 
-        self.current_token = store.get_cache_stream_token  # type: ignore
+        self.current_token = current_token_without_instance(store.get_cache_stream_token)  # type: ignore
         self.update_function = db_query_to_update_function(store.get_all_updated_caches)  # type: ignore
 
         super(CachesStream, self).__init__(hs)
@@ -391,7 +396,7 @@ class PublicRoomsStream(Stream):
     def __init__(self, hs):
         store = hs.get_datastore()
 
-        self.current_token = store.get_current_public_room_stream_id  # type: ignore
+        self.current_token = current_token_without_instance(store.get_current_public_room_stream_id)  # type: ignore
         self.update_function = db_query_to_update_function(store.get_all_new_public_rooms)  # type: ignore
 
         super(PublicRoomsStream, self).__init__(hs)
@@ -412,7 +417,7 @@ class DeviceListsStream(Stream):
     def __init__(self, hs):
         store = hs.get_datastore()
 
-        self.current_token = store.get_device_stream_token  # type: ignore
+        self.current_token = current_token_without_instance(store.get_device_stream_token)  # type: ignore
         self.update_function = db_query_to_update_function(store.get_all_device_list_changes_for_remotes)  # type: ignore
 
         super(DeviceListsStream, self).__init__(hs)
@@ -430,7 +435,7 @@ class ToDeviceStream(Stream):
     def __init__(self, hs):
         store = hs.get_datastore()
 
-        self.current_token = store.get_to_device_stream_token  # type: ignore
+        self.current_token = current_token_without_instance(store.get_to_device_stream_token)  # type: ignore
         self.update_function = db_query_to_update_function(store.get_all_new_device_messages)  # type: ignore
 
         super(ToDeviceStream, self).__init__(hs)
@@ -450,7 +455,7 @@ class TagAccountDataStream(Stream):
     def __init__(self, hs):
         store = hs.get_datastore()
 
-        self.current_token = store.get_max_account_data_stream_id  # type: ignore
+        self.current_token = current_token_without_instance(store.get_max_account_data_stream_id)  # type: ignore
         self.update_function = db_query_to_update_function(store.get_all_updated_tags)  # type: ignore
 
         super(TagAccountDataStream, self).__init__(hs)
@@ -470,7 +475,7 @@ class AccountDataStream(Stream):
     def __init__(self, hs):
         self.store = hs.get_datastore()
 
-        self.current_token = self.store.get_max_account_data_stream_id  # type: ignore
+        self.current_token = current_token_without_instance(self.store.get_max_account_data_stream_id)  # type: ignore
         self.update_function = db_query_to_update_function(self._update_function)  # type: ignore
 
         super(AccountDataStream, self).__init__(hs)
@@ -501,7 +506,7 @@ class GroupServerStream(Stream):
     def __init__(self, hs):
         store = hs.get_datastore()
 
-        self.current_token = store.get_group_stream_token  # type: ignore
+        self.current_token = current_token_without_instance(store.get_group_stream_token)  # type: ignore
         self.update_function = db_query_to_update_function(store.get_all_groups_changes)  # type: ignore
 
         super(GroupServerStream, self).__init__(hs)
@@ -519,7 +524,7 @@ class UserSignatureStream(Stream):
     def __init__(self, hs):
         store = hs.get_datastore()
 
-        self.current_token = store.get_device_stream_token  # type: ignore
+        self.current_token = current_token_without_instance(store.get_device_stream_token)  # type: ignore
         self.update_function = db_query_to_update_function(store.get_all_user_signature_changes_for_remotes)  # type: ignore
 
         super(UserSignatureStream, self).__init__(hs)

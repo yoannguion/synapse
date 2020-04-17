@@ -17,7 +17,11 @@ from collections import namedtuple
 
 from twisted.internet import defer
 
-from synapse.replication.tcp.streams._base import Stream, db_query_to_update_function
+from synapse.replication.tcp.streams._base import (
+    Stream,
+    current_token_without_instance,
+    db_query_to_update_function,
+)
 
 
 class FederationStream(Stream):
@@ -43,10 +47,10 @@ class FederationStream(Stream):
         # so we stub the stream out when that is the case.
         if hs.config.worker_app is None or hs.should_send_federation():
             federation_sender = hs.get_federation_sender()
-            self.current_token = federation_sender.get_current_token  # type: ignore
+            self.current_token = current_token_without_instance(federation_sender.get_current_token)  # type: ignore
             self.update_function = db_query_to_update_function(federation_sender.get_replication_rows)  # type: ignore
         else:
-            self.current_token = lambda: 0  # type: ignore
+            self.current_token = lambda instance_name: 0  # type: ignore
             self.update_function = lambda from_token, upto_token, limit: defer.succeed(([], upto_token, bool))  # type: ignore
 
         super(FederationStream, self).__init__(hs)
