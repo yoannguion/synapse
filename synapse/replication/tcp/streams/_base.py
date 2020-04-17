@@ -370,7 +370,7 @@ class CachesStream(Stream):
     def __init__(self, hs):
         store = hs.get_datastore()
 
-        self.current_token = current_token_without_instance(store.get_cache_stream_token)  # type: ignore
+        self.current_token = store.get_cache_stream_token  # type: ignore
         self.update_function = db_query_to_update_function(store.get_all_updated_caches)  # type: ignore
 
         super(CachesStream, self).__init__(hs)

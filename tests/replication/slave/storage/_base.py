@@ -58,6 +58,7 @@ class BaseSlavedStoreTestCase(unittest.HomeserverTestCase):
         # off of the slave store rather than the main store.
         self.replication_handler = ReplicationCommandHandler(self.hs)
         self.replication_handler._store = self.slaved_store
+        self.replication_handler._instance_name = "slave"
 
         self.replication_handler._replication_data_handler = ReplicationDataHandler(
             self.slaved_store

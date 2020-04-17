@@ -193,6 +193,9 @@ class ReplicationCommandHandler:
             await self._server_notices_sender.on_user_ip(cmd.user_id)
 
     async def on_RDATA(self, cmd: RdataCommand):
+        if cmd.instance_name == self._instance_name:
+            return
+
         stream_name = cmd.stream_name
         inbound_rdata_count.labels(stream_name).inc()
 
@@ -242,7 +245,7 @@ class ReplicationCommandHandler:
             rows: a list of Stream.ROW_TYPE objects as returned by
                 Stream.parse_row.
         """
-        logger.debug("Received rdata %s -> %s", stream_name, token)
+        logger.info("Received rdata %s (%s) -> %s", stream_name, instance_name, token)
         await self._replication_data_handler.on_rdata(
             stream_name, instance_name, token, rows
         )

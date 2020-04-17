@@ -77,6 +77,8 @@ class SQLBaseStore(metaclass=ABCMeta):
                 cache.
         """
 
+        logger.info("Invalidating cache %s: %r", cache_name, key)
+
         try:
             if key is None:
                 getattr(self, cache_name).invalidate_all()

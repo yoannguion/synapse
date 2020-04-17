@@ -25,7 +25,12 @@ from twisted.internet.protocol import Factory
 
 from synapse.metrics.background_process_metrics import run_as_background_process
 from synapse.replication.tcp.protocol import ServerReplicationStreamProtocol
-from synapse.replication.tcp.streams import STREAMS_MAP, FederationStream, Stream
+from synapse.replication.tcp.streams import (
+    STREAMS_MAP,
+    CachesStream,
+    FederationStream,
+    Stream,
+)
 from synapse.util.metrics import Measure
 
 stream_updates_counter = Counter(
@@ -84,7 +89,12 @@ class ReplicationStreamer(object):
                     # hase been disabled on the master.
                     continue
 
+                if stream == CachesStream:
+                    continue
+
                 self.streams.append(stream(hs))
+
+        self.streams.append(CachesStream(hs))
 
         self.streams_by_name = {stream.NAME: stream for stream in self.streams}
 
