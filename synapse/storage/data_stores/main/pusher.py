@@ -129,7 +129,7 @@ class PusherWorkerStore(SQLBaseStore):
             "get_all_updated_pushers", get_all_updated_pushers_txn
         )
 
-    def get_all_updated_pushers_rows(self, last_id, current_id, limit):
+    def get_all_updated_pushers_rows(self, instance_name, last_id, current_id, limit):
         """Get all the pushers that have changed between the given tokens.
 
         Returns:

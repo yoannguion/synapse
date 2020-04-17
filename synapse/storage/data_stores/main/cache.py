@@ -33,7 +33,7 @@ CURRENT_STATE_CACHE_NAME = "cs_cache_fake"
 
 
 class CacheInvalidationWorkerStore(SQLBaseStore):
-    def get_all_updated_caches(self, last_id, current_id, limit):
+    def get_all_updated_caches(self, instance_name, last_id, current_id, limit):
         if last_id == current_id:
             return defer.succeed([])
 

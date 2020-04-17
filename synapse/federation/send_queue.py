@@ -250,7 +250,7 @@ class FederationRemoteSendQueue(object):
         self._clear_queue_before_pos(token)
 
     async def get_replication_rows(
-        self, from_token, to_token, limit, federation_ack=None
+        self, instance_name, from_token, to_token, limit, federation_ack=None
     ):
         """Get rows to be sent over federation between the two tokens
 

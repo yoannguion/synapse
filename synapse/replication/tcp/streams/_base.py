@@ -146,7 +146,7 @@ def db_query_to_update_function(
     """
 
     async def update_function(instance_name, from_token, upto_token, limit):
-        rows = await query_function(from_token, upto_token, limit)
+        rows = await query_function(instance_name, from_token, upto_token, limit)
         updates = [(row[0], row[1:]) for row in rows]
         limited = False
         if len(updates) == limit:
@@ -307,7 +307,7 @@ class PushRulesStream(Stream):
         push_rules_token, _ = self.store.get_push_rules_stream_token()
         return push_rules_token
 
-    async def update_function(self, from_token, to_token, limit):
+    async def update_function(self, instance_name, from_token, to_token, limit):
         rows = await self.store.get_all_push_rule_updates(from_token, to_token, limit)
 
         limited = False
@@ -475,7 +475,7 @@ class AccountDataStream(Stream):
 
         super(AccountDataStream, self).__init__(hs)
 
-    async def _update_function(self, from_token, to_token, limit):
+    async def _update_function(self, instance_name, from_token, to_token, limit):
         global_results, room_results = await self.store.get_all_updated_account_data(
             from_token, from_token, to_token, limit
         )

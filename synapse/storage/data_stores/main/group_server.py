@@ -462,7 +462,7 @@ class GroupServerWorkerStore(SQLBaseStore):
             "get_groups_changes_for_user", _get_groups_changes_for_user_txn
         )
 
-    def get_all_groups_changes(self, from_token, to_token, limit):
+    def get_all_groups_changes(self, instance_name, from_token, to_token, limit):
         from_token = int(from_token)
         has_changed = self._group_updates_stream_cache.has_any_entity_changed(
             from_token

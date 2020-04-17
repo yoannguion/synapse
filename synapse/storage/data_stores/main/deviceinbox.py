@@ -207,7 +207,7 @@ class DeviceInboxWorkerStore(SQLBaseStore):
             "delete_device_msgs_for_remote", delete_messages_for_remote_destination_txn
         )
 
-    def get_all_new_device_messages(self, last_pos, current_pos, limit):
+    def get_all_new_device_messages(self, intsance_name, last_pos, current_pos, limit):
         """
         Args:
             last_pos(int):

@@ -593,7 +593,7 @@ class DeviceWorkerStore(SQLBaseStore):
             return set()
 
     async def get_all_device_list_changes_for_remotes(
-        self, from_key: int, to_key: int, limit: int,
+        self, instance_name: str, from_key: int, to_key: int, limit: int,
     ) -> List[Tuple[int, str]]:
         """Return a list of `(stream_id, entity)` which is the combined list of
         changes to devices and which destinations need to be poked. Entity is

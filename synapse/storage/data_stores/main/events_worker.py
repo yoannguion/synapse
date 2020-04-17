@@ -1017,7 +1017,9 @@ class EventsWorkerStore(SQLBaseStore):
             "get_all_new_forward_event_rows", get_all_new_forward_event_rows
         )
 
-    def get_all_new_backfill_event_rows(self, last_id, current_id, limit):
+    def get_all_new_backfill_event_rows(
+        self, instance_name, last_id, current_id, limit
+    ):
         if last_id == current_id:
             return defer.succeed([])
 

@@ -747,7 +747,7 @@ class PresenceHandler(object):
 
         return False
 
-    async def get_all_presence_updates(self, last_id, current_id, limit):
+    async def get_all_presence_updates(self, instance_name, last_id, current_id, limit):
         """
         Gets a list of presence update rows from between the given stream ids.
         Each row has:

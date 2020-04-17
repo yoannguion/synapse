@@ -56,7 +56,7 @@ class TagsWorkerStore(AccountDataWorkerStore):
         return deferred
 
     @defer.inlineCallbacks
-    def get_all_updated_tags(self, last_id, current_id, limit):
+    def get_all_updated_tags(self, instance_name, last_id, current_id, limit):
         """Get all the client tags that have changed on the server
         Args:
             last_id(int): The position to fetch from.

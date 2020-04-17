@@ -266,7 +266,7 @@ class ReceiptsWorkerStore(SQLBaseStore):
         }
         return results
 
-    def get_all_updated_receipts(self, last_id, current_id, limit=None):
+    def get_all_updated_receipts(self, instance_name, last_id, current_id, limit=None):
         if last_id == current_id:
             return defer.succeed([])
 

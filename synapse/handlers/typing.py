@@ -259,7 +259,7 @@ class TypingHandler(object):
         )
 
     async def get_all_typing_updates(
-        self, last_id: int, current_id: int, limit: int
+        self, instance_name: str, last_id: int, current_id: int, limit: int
     ) -> List[dict]:
         """Get up to `limit` typing updates between the given tokens, earliest
         updates first.

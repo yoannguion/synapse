@@ -121,7 +121,9 @@ class EventsStream(Stream):
 
         super(EventsStream, self).__init__(hs)
 
-    async def _update_function(self, from_token, current_token, limit=None):
+    async def _update_function(
+        self, instance_name, from_token, current_token, limit=None
+    ):
         event_rows = await self._store.get_all_new_forward_event_rows(
             from_token, current_token, limit
         )

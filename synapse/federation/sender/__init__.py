@@ -504,7 +504,7 @@ class FederationSender(object):
         return 0
 
     async def get_replication_rows(
-        self, from_token, to_token, limit, federation_ack=None
+        self, instance_name, from_token, to_token, limit, federation_ack=None
     ):
         # Dummy implementation for case where federation sender isn't offloaded
         # to a worker.

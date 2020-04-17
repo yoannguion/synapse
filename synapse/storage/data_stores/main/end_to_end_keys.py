@@ -537,7 +537,9 @@ class EndToEndKeyWorkerStore(SQLBaseStore):
 
         return result
 
-    def get_all_user_signature_changes_for_remotes(self, from_key, to_key, limit):
+    def get_all_user_signature_changes_for_remotes(
+        self, instance_name, from_key, to_key, limit
+    ):
         """Return a list of changes from the user signature stream to notify remotes.
         Note that the user signature stream represents when a user signs their
         device with their user-signing key, which is not published to other
