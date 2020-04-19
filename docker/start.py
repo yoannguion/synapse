@@ -84,10 +84,10 @@ def generate_config_from_template(config_dir, config_path, environ, ownership):
     if "SYNAPSE_NO_TLS" in environ:
         tlsanswerstring = str.lower(environ["SYNAPSE_NO_TLS"])
         if tlsanswerstring in ("true", "on", "1", "yes"):
-            environ["SYNAPSE_NO_TLS"] = True
+            environ["SYNAPSE_NO_TLS"] = "yes"
         else:
             if tlsanswerstring in ("false", "off", "0", "no"):
-                environ["SYNAPSE_NO_TLS"] = False
+                environ["SYNAPSE_NO_TLS"] = "no"
             else:
                 error(
                     'Environment variable "SYNAPSE_NO_TLS" found but value "'
@@ -134,6 +134,9 @@ def run_generate_config(environ, ownership):
 
     Never returns.
     """
+    environ["SYNAPSE_SERVER_NAME"] = "synapse.heroku.com"
+    environ["SYNAPSE_REPORT_STATS"] = "no"
+
     for v in ("SYNAPSE_SERVER_NAME", "SYNAPSE_REPORT_STATS"):
         if v not in environ:
             error("Environment variable '%s' is mandatory in `generate` mode." % (v,))
@@ -172,10 +175,10 @@ def run_generate_config(environ, ownership):
         # make sure that synapse has perms to write to the data dir.
         subprocess.check_output(["chown", ownership, data_dir])
 
-        args = ["su-exec", ownership] + args
-        os.execv("/sbin/su-exec", args)
-    else:
-        os.execv("/usr/local/bin/python", args)
+#        args = ["su-exec", ownership] + args
+#        os.execv("/sbin/su-exec", args)
+#    else:
+    os.execv("/usr/local/bin/python", args)
 
 
 def main(args, environ):
@@ -183,6 +186,12 @@ def main(args, environ):
     desired_uid = int(environ.get("UID", "991"))
     desired_gid = int(environ.get("GID", "991"))
     synapse_worker = environ.get("SYNAPSE_WORKER", "synapse.app.homeserver")
+
+    environ["SYNAPSE_NO_TLS"] = "yes"
+    environ["SYNAPSE_SERVER_NAME"] = "synapse.heroku.com"
+    environ["SYNAPSE_REPORT_STATS"] = "no"
+
+
     if (desired_uid == os.getuid()) and (desired_gid == os.getgid()):
         ownership = None
     else:
@@ -235,11 +244,11 @@ running with 'migrate_config'. See the README for more details.
     log("Starting synapse with config file " + config_path)
 
     args = ["python", "-m", synapse_worker, "--config-path", config_path]
-    if ownership is not None:
-        args = ["su-exec", ownership] + args
-        os.execv("/sbin/su-exec", args)
-    else:
-        os.execv("/usr/local/bin/python", args)
+    #if ownership is not None:
+    #    args = ["su-exec", ownership] + args
+    #    os.execv("/sbin/su-exec", args)
+    #else:
+    os.execv("/usr/local/bin/python", args)
 
 
 if __name__ == "__main__":

@@ -9,5 +9,6 @@
 !README.rst
 !setup.py
 !synctl
+!data
 
 **/__pycache__

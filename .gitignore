@@ -30,6 +30,7 @@ _trial_temp*/
 /.idea/
 /.ropeproject/
 /.vscode/
+*.iml
 
 # build products
 !/.coveragerc
@@ -42,3 +43,4 @@ _trial_temp*/
 /docs/build/
 /htmlcov
 /pip-wheel-metadata/
+

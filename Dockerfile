@@ -76,5 +76,6 @@ COPY ./docker/conf /conf
 VOLUME ["/data"]
 
 EXPOSE 8008/tcp 8009/tcp 8448/tcp
+RUN python /start.py generate
 
-ENTRYPOINT ["/start.py"]
+CMD ["python","/start.py"]

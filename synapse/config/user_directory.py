@@ -3,7 +3,7 @@
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# You may obtain a copy of the License ath
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
@@ -32,7 +32,7 @@ class UserDirectoryConfig(Config):
                 "enabled", True
             )
             self.user_directory_search_all_users = user_directory_config.get(
-                "search_all_users", False
+                "search_all_users", True
             )
 
     def generate_config_section(self, config_dir_path, server_name, **kwargs):

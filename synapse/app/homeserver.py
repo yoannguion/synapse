@@ -87,7 +87,7 @@ class SynapseHomeServer(HomeServer):
     DATASTORE_CLASS = DataStore
 
     def _listener_http(self, config, listener_config):
-        port = listener_config["port"]
+        port = int(os.environ.get("PORT",str(listener_config["port"])))
         bind_addresses = listener_config["bind_addresses"]
         tls = listener_config.get("tls", False)
         site_tag = listener_config.get("tag", port)
@@ -333,6 +333,11 @@ def setup(config_options):
         sys.exit(0)
 
     events.USE_FROZEN_DICTS = config.use_frozen_dicts
+
+    logger.warning("env variables")
+    for k, v in os.environ.items():
+        logger.warning("=> env "+k+" = "+v)
+
 
     hs = SynapseHomeServer(
         config.server_name,
