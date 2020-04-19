@@ -1,0 +1,7 @@
+build:
+  docker:
+    web: Dockerfile
+  config:
+    SYNAPSE_NO_TLS: yes
+    SYNAPSE_SERVER_NAME: synapse.herokuapp.com
+    SYNAPSE_REPORT_STATS: no
